@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>deephunch — 物理AI 世界基础模型平台</title>
+<style>
+  :root{--bg:#f6f7fb;--card:#fff;--ink:#1a2233;--muted:#6b7280;--brand:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--line:#e5e7eb}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  body{background:var(--bg);color:var(--ink)}
+  header{background:#0f172a;color:#fff;padding:18px 32px;display:flex;align-items:center;gap:14px}
+  header .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700}
+  header h1{font-size:18px;font-weight:600}
+  header .sub{font-size:12px;color:#94a3b8}
+  nav{display:flex;gap:4px;background:#fff;border-bottom:1px solid var(--line);padding:0 24px;position:sticky;top:0}
+  nav button{border:0;background:none;padding:14px 18px;font-size:14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent}
+  nav button.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+  main{max-width:1180px;margin:24px auto;padding:0 24px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card .num{font-size:26px;font-weight:700;margin-top:6px}
+  .card .lbl{font-size:13px;color:var(--muted)}
+  section{display:none}
+  section.active{display:block}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px}
+  .panel h2{font-size:16px;margin-bottom:12px}
+  .panel .hint{font-size:12px;color:var(--muted);margin-bottom:12px}
+  form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--muted)}
+  input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;min-width:140px;background:#fff;color:var(--ink)}
+  textarea{min-width:320px;min-height:64px}
+  button.btn{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer}
+  button.btn:hover{opacity:.9}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:14px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:500;font-size:12px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
+  .tag.done{background:#dcfce7;color:var(--ok)} .tag.running{background:#fef3c7;color:var(--warn)}
+  .tag.queued{background:#e0e7ff;color:var(--brand)} .tag.failed{background:#fee2e2;color:var(--err)}
+  .tag.block{background:#fee2e2;color:var(--err)} .tag.pass{background:#dcfce7;color:var(--ok)} .tag.blur{background:#fef3c7;color:var(--warn)}
+  pre.log{background:#0f172a;color:#93c5fd;border-radius:8px;padding:12px;font-size:12px;white-space:pre-wrap;max-height:180px;overflow:auto;margin-top:10px}
+  .empty{color:var(--muted);font-size:13px;padding:16px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">dh</div>
+  <div>
+    <h1>deephunch 控制台</h1>
+    <div class="sub">物理AI 世界基础模型平台 · 数据策展 / Tokenizer / 世界模型 / 后训练 / 护栏</div>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-t="overview" class="active">总览</button>
+  <button data-t="curator">数据策展</button>
+  <button data-t="tokenizer">Tokenizer</button>
+  <button data-t="worldmodel">世界模型生成</button>
+  <button data-t="posttrain">后训练</button>
+  <button data-t="guardrails">安全护栏</button>
+  <button data-t="registry">模型仓库</button>
+</nav>
+
+<main>
+  <!-- 总览 -->
+  <section id="overview" class="active">
+    <div class="cards">
+      <div class="card"><div class="lbl">数据集</div><div class="num" id="st-datasets">-</div></div>
+      <div class="card"><div class="lbl">视频片段累计</div><div class="num" id="st-clips">-</div></div>
+      <div class="card"><div class="lbl">策展任务</div><div class="num" id="st-curator">-</div></div>
+      <div class="card"><div class="lbl">生成任务</div><div class="num" id="st-gen">-</div></div>
+      <div class="card"><div class="lbl">模型工件</div><div class="num" id="st-models">-</div></div>
+    </div>
+    <div class="panel">
+      <h2>平台架构（对应 NVIDIA Cosmos）</h2>
+      <p class="hint">数据策展（NeMo Curator）→ Tokenizer（Cosmos Tokenizer）→ 世界模型（Predict/Transfer）→ 后训练（NeMo 微调）→ 安全护栏（Pre/Post Guardrails）</p>
+      <pre class="log">原始视频 ─▶ [curator: split ▶ transcode ▶ filter ▶ caption ▶ embed]
+        ─▶ [tokenizer: dh-tok-c8x8x8 连续 / dh-tok-d8x16x16 离散]
+        ─▶ [worldmodel: text2world ▶ video2world ▶ transfer (sim2real)]
+        ─▶ [posttrain: LoRA / SFT 领域微调]
+guardrails: Pre-guard 提示词过滤 ─▶ 生成 ─▶ Post-guard 输出审核</pre>
+    </div>
+  </section>
+
+  <!-- 数据策展 -->
+  <section id="curator">
+    <div class="panel">
+      <h2>创建数据集</h2>
+      <form id="ds-form">
+        <div class="field"><label>名称</label><input id="ds-name" required></div>
+        <div class="field"><label>领域</label><select id="ds-domain"><option>robotics</option><option>av</option><option>industrial</option></select></div>
+        <div class="field"><label>许可</label><input id="ds-license" value="proprietary"></div>
+        <button class="btn" type="submit">创建</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>新建策展任务</h2>
+      <p class="hint">流水线阶段：split → transcode → filter → caption → embed（对应 NeMo Curator）</p>
+      <form id="cj-form">
+        <div class="field"><label>数据集</label><select id="cj-dataset"></select></div>
+        <div class="field"><label>源地址 (URI/S3/本地)</label><input id="cj-uri" value="s3://raw-videos/batch-001/" style="min-width:220px"></div>
+        <div class="field"><label>阶段</label><input id="cj-stages" value="split,transcode,filter,caption,embed" style="min-width:280px"></div>
+        <button class="btn" type="submit">提交任务</button>
+      </form>
+      <table id="cj-table"><thead><tr><th>ID</th><th>数据集</th><th>阶段进度</th><th>产出片段</th><th>状态</th><th>日志</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>数据集列表</h2>
+      <table id="ds-table"><thead><tr><th>ID</th><th>名称</th><th>领域</th><th>片段数</th><th>小时数</th><th>许可</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- Tokenizer -->
+  <section id="tokenizer">
+    <div class="panel">
+      <h2>Tokenizer 配置</h2>
+      <pre class="log" id="tok-configs"></pre>
+    </div>
+    <div class="panel">
+      <h2>新建 Tokenize 任务</h2>
+      <form id="tk-form">
+        <div class="field"><label>数据集</label><select id="tk-dataset"></select></div>
+        <div class="field"><label>Tokenizer</label><select id="tk-tok"><option>dh-tok-c8x8x8（连续·扩散用）</option><option>dh-tok-d8x16x16（离散·自回归用）</option></select></div>
+        <div class="field"><label>方向</label><select id="tk-dir"><option>encode</option><option>decode</option></select></div>
+        <div class="field"><label>片段数</label><input id="tk-clips" type="number" value="100"></div>
+        <button class="btn" type="submit">提交</button>
+      </form>
+      <table id="tk-table"><thead><tr><th>ID</th><th>Tokenizer</th><th>方向</th><th>片段数</th><th>Token 数</th><th>压缩配置</th><th>状态</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- 世界模型 -->
+  <section id="worldmodel">
+    <div class="panel">
+      <h2>新建世界生成任务</h2>
+      <p class="hint">text2world / image2world / video2world / transfer（sim2real）；生成前自动经过 Pre-guard 护栏</p>
+      <form id="gen-form">
+        <div class="field"><label>任务类型</label><select id="gen-type"><option>text2world</option><option>image2world</option><option>video2world</option><option>transfer</option></select></div>
+        <div class="field"><label>提示词</label><textarea id="gen-prompt">仓库中一个人形机器人抓取纸箱并放上传送带，白天，自然光照</textarea></div>
+        <div class="field"><label>模型</label><select id="gen-model"><option>dh-predict-2b</option><option>dh-predict-8b</option><option>dh-transfer-2b</option></select></div>
+        <div class="field"><label>时长(s)</label><input id="gen-dur" type="number" value="5" min="1" max="30"></div>
+        <button class="btn" type="submit">生成</button>
+      </form>
+      <table id="gen-table"><thead><tr><th>ID</th><th>类型</th><th>提示词</th><th>模型</th><th>时长</th><th>后端</th><th>状态</th><th>产物</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- 后训练 -->
+  <section id="posttrain">
+    <div class="panel">
+      <h2>新建后训练任务</h2>
+      <p class="hint">LoRA / SFT 微调（对应 NeMo Framework）；用领域数据把通用世界模型变成领域专家模型</p>
+      <form id="pt-form">
+        <div class="field"><label>基础模型</label><select id="pt-base"><option>dh-predict-2b</option><option>dh-predict-8b</option></select></div>
+        <div class="field"><label>微调预设</label><select id="pt-preset"><option>dh-predict-lora</option><option>dh-predict-sft</option></select></div>
+        <div class="field"><label>数据集</label><select id="pt-dataset"></select></div>
+        <button class="btn" type="submit">开始训练</button>
+      </form>
+      <table id="pt-table"><thead><tr><th>ID</th><th>基础模型</th><th>预设</th><th>Epoch</th><th>Loss</th><th>产物</th><th>状态</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- 护栏 -->
+  <section id="guardrails">
+    <div class="panel">
+      <h2>Pre-guard 提示词检测</h2>
+      <form id="pg-form">
+        <div class="field"><label>提示词</label><input id="pg-prompt" style="min-width:320px" value="仓库机器人搬运箱子"></div>
+        <button class="btn" type="submit">检测</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>护栏事件日志</h2>
+      <table id="gr-table"><thead><tr><th>ID</th><th>阶段</th><th>动作</th><th>原因</th><th>时间</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- 模型仓库 -->
+  <section id="registry">
+    <div class="panel">
+      <h2>注册模型工件</h2>
+      <form id="ma-form">
+        <div class="field"><label>名称</label><input id="ma-name" required></div>
+        <div class="field"><label>家族</label><select id="ma-family"><option>predict</option><option>transfer</option><option>reason</option></select></div>
+        <div class="field"><label>参数量(B)</label><input id="ma-size" type="number" step="0.1" value="2"></div>
+        <div class="field"><label>URI</label><input id="ma-uri" placeholder="s3://models/..."></div>
+        <button class="btn" type="submit">注册</button>
+      </form>
+      <table id="ma-table"><thead><tr><th>ID</th><th>名称</th><th>家族</th><th>参数量</th><th>版本</th><th>许可</th><th>URI</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const api=async(u,o)=>{const r=await fetch(u,Object.assign({headers:{'Content-Type':'application/json'}},o||{}));return r.json()};
+const val=id=>$('#'+id).value.trim();
+const opt=(sel,items)=>{const s=$('#'+sel);s.innerHTML=items.map(i=>`<option value="${i.id}">${i.name}</option>`).join('')||'<option value="">（无数据集，请先创建）</option>'};
+
+document.getElementById('nav').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(e.target.dataset.t).classList.add('active');
+  refresh();
+});
+
+async function refresh(){
+  const [ds,cj,tk,gen,pt,gr,ma]=await Promise.all([
+    api('/api/curator/datasets'),api('/api/curator/jobs'),api('/api/tokenizer/jobs'),
+    api('/api/worldmodel/jobs'),api('/api/posttrain/jobs'),api('/api/guardrails/events'),api('/api/registry')]);
+  $('#st-datasets').textContent=ds.length;
+  $('#st-clips').textContent=ds.reduce((a,d)=>a+d.video_count,0).toLocaleString();
+  $('#st-curator').textContent=cj.length; $('#st-gen').textContent=gen.length; $('#st-models').textContent=ma.length;
+  opt('cj-dataset',ds);opt('tk-dataset',ds);opt('pt-dataset',ds);
+  const tag=s=>`<span class="tag ${s}">${s}</span>`;
+  $('#ds-table tbody').innerHTML=ds.map(d=>`<tr><td>${d.id}</td><td>${d.name}</td><td>${d.domain}</td><td>${d.video_count}</td><td>${d.hours}</td><td>${d.license}</td></tr>`).join('')||'<tr><td colspan=6 class="empty">暂无数据集</td></tr>';
+  $('#cj-table tbody').innerHTML=cj.map(j=>`<tr><td>${j.id}</td><td>${j.dataset_id}</td><td>${j.stage_progress}/5</td><td>${j.clips_out}</td><td>${tag(j.status)}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(j.logs||'').split('\n').pop()||''}</td></tr>`).join('')||'<tr><td colspan=6 class="empty">暂无策展任务</td></tr>';
+  $('#tk-table tbody').innerHTML=tk.map(j=>`<tr><td>${j.id}</td><td>${j.tokenizer}</td><td>${j.direction}</td><td>${j.clips_in}</td><td>${j.tokens_out||'-'}</td><td>${j.compression||'-'}</td><td>${tag(j.status)}</td></tr>`).join('')||'<tr><td colspan=7 class="empty">暂无 tokenize 任务</td></tr>';
+  $('#gen-table tbody').innerHTML=gen.map(j=>`<tr><td>${j.id}</td><td>${j.job_type}</td><td>${j.prompt}</td><td>${j.model}</td><td>${j.duration_s}s</td><td>${j.backend}</td><td>${tag(j.status)}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.artifact||'-'}</td></tr>`).join('')||'<tr><td colspan=8 class="empty">暂无生成任务</td></tr>';
+  $('#pt-table tbody').innerHTML=pt.map(j=>`<tr><td>${j.id}</td><td>${j.base_model}</td><td>${j.preset}</td><td>${j.epoch}</td><td>${j.loss}</td><td>${j.artifact||'-'}</td><td>${tag(j.status)}</td></tr>`).join('')||'<tr><td colspan=7 class="empty">暂无后训练任务</td></tr>';
+  $('#gr-table tbody').innerHTML=gr.map(e=>`<tr><td>${e.id}</td><td>${e.phase}</td><td>${tag(e.action)}</td><td>${e.reason}</td><td>${e.created_at}</td></tr>`).join('')||'<tr><td colspan=5 class="empty">暂无护栏事件</td></tr>';
+  $('#ma-table tbody').innerHTML=ma.map(m=>`<tr><td>${m.id}</td><td>${m.name}</td><td>${m.family}</td><td>${m.size_b}B</td><td>v${m.version}</td><td>${m.license}</td><td>${m.uri||'-'}</td></tr>`).join('')||'<tr><td colspan=7 class="empty">暂无模型工件</td></tr>';
+}
+
+$('#ds-form').onsubmit=async e=>{e.preventDefault();await api('/api/curator/datasets',{method:'POST',body:JSON.stringify({name:val('ds-name'),domain:val('ds-domain'),license:val('ds-license')})});$('#ds-name').value='';refresh()};
+$('#cj-form').onsubmit=async e=>{e.preventDefault();if(!val('cj-dataset'))return alert('请先创建数据集');await api('/api/curator/jobs',{method:'POST',body:JSON.stringify({dataset_id:+val('cj-dataset'),source_uri:val('cj-uri'),stages:val('cj-stages')})});refresh()};
+$('#tk-form').onsubmit=async e=>{e.preventDefault();await api('/api/tokenizer/jobs',{method:'POST',body:JSON.stringify({dataset_id:+val('tk-dataset'),tokenizer:val('tk-tok').split('（')[0],direction:val('tk-dir'),clips_in:+val('tk-clips')})});refresh()};
+$('#gen-form').onsubmit=async e=>{e.preventDefault();const r=await api('/api/worldmodel/jobs',{method:'POST',body:JSON.stringify({job_type:val('gen-type'),prompt:val('gen-prompt'),model:val('gen-model'),duration_s:+val('gen-dur')})});if(r.blocked)alert('Pre-guard 拦截：'+r.reason);refresh()};
+$('#pt-form').onsubmit=async e=>{e.preventDefault();if(!val('pt-dataset'))return alert('请先创建数据集');await api('/api/posttrain/jobs',{method:'POST',body:JSON.stringify({base_model:val('pt-base'),preset:val('pt-preset'),dataset_id:+val('pt-dataset')})});refresh()};
+$('#pg-form').onsubmit=async e=>{e.preventDefault();const r=await api('/api/guardrails/pre',{method:'POST',body:JSON.stringify({prompt:val('pg-prompt')})});alert(r.allowed?'✅ 通过 Pre-guard 检测':'⛔ 被拦截：'+r.reason);refresh()};
+$('#ma-form').onsubmit=async e=>{e.preventDefault();await api('/api/registry',{method:'POST',body:JSON.stringify({name:val('ma-name'),family:val('ma-family'),size_b:+val('ma-size'),uri:val('ma-uri')})});$('#ma-name').value='';refresh()};
+
+api('/api/tokenizer/configs').then(c=>{$('#tok-configs').textContent=JSON.stringify(c,null,2)});
+refresh(); setInterval(refresh,5000);
+</script>
+</body>
+</html>

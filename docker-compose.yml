@@ -1,0 +1,15 @@
+services:
+  deephunch:
+    build: .
+    ports:
+      - "8300:8300"
+    volumes:
+      - dh-data:/app/data
+    environment:
+      - DEEPHUNCH_WFM_BACKEND=mock
+      # - DEEPHUNCH_WFM_BACKEND=remote
+      # - DEEPHUNCH_WFM_REMOTE_URL=http://inference:9000
+    restart: unless-stopped
+
+volumes:
+  dh-data:
