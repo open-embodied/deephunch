@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmos 世界基础模型与 deephunch 平台：物理AI 的数据、测试与商业化</title>
+<style>
+  :root{--ink:#1f2937;--muted:#6b7280;--brand:#1d4ed8;--accent:#7c3aed;--bg:#f8fafc;--line:#e2e8f0;--card:#ffffff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.85;font-size:16px}
+  .layout{display:flex;max-width:1280px;margin:0 auto}
+  nav.toc{width:260px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 18px;border-right:1px solid var(--line);background:var(--card)}
+  nav.toc h3{font-size:13px;color:var(--muted);margin-bottom:10px;letter-spacing:1px}
+  nav.toc a{display:block;color:var(--ink);text-decoration:none;font-size:13.5px;padding:6px 10px;border-radius:8px;margin-bottom:2px}
+  nav.toc a:hover{background:#eff6ff;color:var(--brand)}
+  nav.toc a.l2{padding-left:24px;color:var(--muted);font-size:13px}
+  main{flex:1;padding:40px 48px 120px;max-width:900px;min-width:0}
+  .hero{background:linear-gradient(135deg,#0f172a,#1e3a8a 60%,#6d28d9);color:#fff;border-radius:18px;padding:44px 40px;margin-bottom:36px}
+  .hero h1{font-size:30px;line-height:1.4;margin-bottom:14px}
+  .hero p{color:#cbd5e1;font-size:15px}
+  .hero .meta{margin-top:18px;font-size:13px;color:#93c5fd}
+  .part{margin-top:56px;padding:14px 22px;background:#eef2ff;border-left:5px solid var(--brand);border-radius:10px;font-size:22px;font-weight:700;color:#1e3a8a}
+  h2{font-size:22px;margin:40px 0 14px;color:#0f172a;border-bottom:2px solid var(--line);padding-bottom:8px}
+  h3{font-size:17px;margin:26px 0 10px;color:#1e3a8a}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0 10px 24px}
+  li{margin:6px 0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;background:var(--card)}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#f1f5f9;font-weight:600}
+  code{background:#eef2ff;color:#3730a3;padding:2px 6px;border-radius:6px;font-size:13.5px;font-family:Consolas,Menlo,monospace}
+  pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow-x:auto;margin:14px 0;font-size:13px;line-height:1.6}
+  pre code{background:none;color:#e2e8f0;padding:0}
+  .callout{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin:16px 0;font-size:14.5px}
+  .callout b{color:#92400e}
+  .info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin:16px 0;font-size:14.5px}
+  .info b{color:#1d4ed8}
+  .footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:960px){nav.toc{display:none}main{padding:24px 20px 80px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <h3>目 录</h3>
+  <a href="#p1">第一部分 Cosmos 介绍</a>
+  <a class="l2" href="#p1-1">1.1 世界基础模型是什么</a>
+  <a class="l2" href="#p1-2">1.2 平台总体架构</a>
+  <a class="l2" href="#p1-3">1.3 数据策展管线 Curator</a>
+  <a class="l2" href="#p1-4">1.4 Cosmos Tokenizer</a>
+  <a class="l2" href="#p1-5">1.5 世界基础模型 WFM</a>
+  <a class="l2" href="#p1-6">1.6 后训练与领域定制</a>
+  <a class="l2" href="#p1-7">1.7 安全护栏 Guardrails</a>
+  <a class="l2" href="#p1-8">1.8 模型家族演进（2026）</a>
+  <a class="l2" href="#p1-9">1.9 产业生态</a>
+  <a href="#p2">第二部分 deephunch 介绍和部署</a>
+  <a class="l2" href="#p2-1">2.1 项目定位</a>
+  <a class="l2" href="#p2-2">2.2 模块映射与架构</a>
+  <a class="l2" href="#p2-3">2.3 目录结构</a>
+  <a class="l2" href="#p2-4">2.4 三步部署</a>
+  <a class="l2" href="#p2-5">2.5 接入真实推理后端</a>
+  <a class="l2" href="#p2-6">2.6 API 速查</a>
+  <a class="l2" href="#p2-7">2.7 源码仓库</a>
+  <a href="#p3">第三部分 人形机器人（ODM）如何用 Cosmos 测试</a>
+  <a class="l2" href="#p3-1">3.1 ODM 的测试困境</a>
+  <a class="l2" href="#p3-2">3.2 测试总体思路</a>
+  <a class="l2" href="#p3-3">3.3 五步测试工作流</a>
+  <a class="l2" href="#p3-4">3.4 回归测试与验收</a>
+  <a class="l2" href="#p3-5">3.5 落地清单</a>
+  <a href="#p4">第四部分 用 Cosmos 生成数据并卖出去</a>
+  <a class="l2" href="#p4-1">4.1 为什么数据能卖钱</a>
+  <a class="l2" href="#p4-2">4.2 数据生产流水线</a>
+  <a class="l2" href="#p4-3">4.3 数据产品形态</a>
+  <a class="l2" href="#p4-4">4.4 客户画像与定价</a>
+  <a class="l2" href="#p4-5">4.5 渠道与销售打法</a>
+  <a class="l2" href="#p4-6">4.6 合规与风险</a>
+  <a class="l2" href="#p4-7">4.7 90 天商业化路线</a>
+</nav>
+
+<main>
+<div class="hero">
+  <h1>Cosmos 世界基础模型与 deephunch 平台<br>——物理AI 的数据、测试与商业化</h1>
+  <p>从 NVIDIA Cosmos 技术报告（arXiv:2501.03575）出发，逐层拆解世界基础模型平台的每个组件；随后给出 Cosmos 架构的开源一比一复刻平台 deephunch 的完整部署手册；再面向人形机器人硬件 ODM 给出基于 Cosmos 的测试方法论；最后回答一个商业问题——如何用 Cosmos 批量生成数据并把它卖出去。</p>
+  <div class="meta">2026 年 11 月 · 全四部分 · 中文版</div>
+</div>
+
+<!-- ================= 第一部分 ================= -->
+<div class="part" id="p1">第一部分 Cosmos 介绍</div>
+
+<h2 id="p1-1">1.1 世界基础模型是什么</h2>
+<p>2025 年 1 月 CES 上，NVIDIA 发布了 <b>Cosmos 世界基础模型平台（World Foundation Model Platform）</b>，技术报告为 <code>arXiv:2501.03575</code>。它的定位一句话可以说清：<b>物理 AI（机器人、自动驾驶、具身智能）需要先在数字世界里训练，而 Cosmos 就是那个"数字世界"的生成器。</b></p>
+<p>NVIDIA 在报告里做了一个类比：LLM 之于语言，WFM（World Foundation Model，世界基础模型）之于物理世界。一个机器人需要两样"数字孪生"——它自己的策略模型（policy model），和它所处环境的世界模型（world model）。前者决定"做什么动作"，后者决定"世界会因此变成什么样"。Cosmos 提供的是后者：<b>一个通用的、可微调的世界模型底座</b>，让开发者不必从零训练自己的世界模型，只需在底座上做领域后训练。</p>
+<p>与通用视频生成（Sora 类）最大的区别在于目标函数：Cosmos 生成的视频不是为了"好看"，而是为了<b>物理一致性</b>——重力、碰撞、遮挡、物体恒存性（object permanence）、光照变化都要符合物理规律，因为生成的每一帧都可能成为机器人的训练数据或测试环境。</p>
+<div class="info"><b>规模事实：</b>Cosmos 预训练使用了约 <b>9000 万亿 token</b>、约 <b>2000 万小时</b>视频数据，覆盖自动驾驶、机器人操作、工业场景、合成环境等。黄仁勋在 CES 主题演讲中称其使命为"让物理 AI 民主化，把通用机器人带给每一位开发者"。</div>
+
+<h2 id="p1-2">1.2 平台总体架构</h2>
+<p>Cosmos 平台由四大组件构成，形成一条完整的数据-模型流水线：</p>
+<table>
+  <tr><th>组件</th><th>作用</th><th>关键数字</th></tr>
+  <tr><td><b>NeMo Curator</b> 数据策展管线</td><td>对海量原始视频做切分、转码、过滤、打标、嵌入</td><td>Blackwell 平台上 14 天处理 2000 万小时视频（CPU 需 3.4 年），加速 89 倍</td></tr>
+  <tr><td><b>Cosmos Tokenizer</b> 视觉分词器</td><td>把图像/视频压缩成 token 供模型训练</td><td>总压缩率较领先方案提升 8 倍，处理速度提升 12 倍</td></tr>
+  <tr><td><b>WFM 世界基础模型</b></td><td>扩散与自回归两种架构的生成式世界模型</td><td>预训练 9000 万亿 token，开放权重</td></tr>
+  <tr><td><b>NeMo Framework</b> 训练框架</td><td>后训练/微调与部署优化</td><td>官方提供自动驾驶与机器人后训练示例</td></tr>
+  <tr><td><b>Guardrails</b> 安全护栏</td><td>Pre-guard 输入过滤 + Post-guard 输出审核</td><td>关键词/Aegis 内容安全模型 + 人脸模糊 + 视频分类</td></tr>
+</table>
+
+<h2 id="p1-3">1.3 数据策展管线 Curator</h2>
+<p>世界模型的预训练数据不是"下载来就用"。Cosmos 的数据管线对原始视频执行：</p>
+<ol>
+  <li><b>切分（split）</b>：用镜头边界检测把长视频切成短片段，避免跨镜头的时间跳变污染时序建模；</li>
+  <li><b>转码（transcode）</b>：统一到统一分辨率/帧率编码（如 H.264、720p、24fps）；</li>
+  <li><b>过滤（filter）</b>：分辨率、清晰度/美观度、运动量（光流）三重阈值，剔除静态画面、低质片段；</li>
+  <li><b>打标（caption）</b>：用 VLM 给每个片段生成描述文本，形成"视频-文本对"，这是生成模型的关键监督信号；</li>
+  <li><b>嵌入（embed）</b>：计算 CLIP 风格语义向量入库，使后续可以用文本检索海量片段（如"雪夜公路""仓库拥堵""人手抓取杯子"）。</li>
+</ol>
+<p>这套管线是后续一切的基础：无论是预训练、还是用检索出的领域片段做后训练，都依赖它把 PB 级原始视频变成"可检索、可训练"的数据集。</p>
+
+<h2 id="p1-4">1.4 Cosmos Tokenizer</h2>
+<p>视频进入模型前必须先"token 化"。Cosmos Tokenizer 提供两种形态：</p>
+<table>
+  <tr><th>形态</th><th>压缩配置</th><th>最大帧数</th><th>服务对象</th></tr>
+  <tr><td>连续（continuous）</td><td>时间 8×、空间 8×8</td><td>121 帧</td><td>扩散 WFM（latent diffusion 输入）</td></tr>
+  <tr><td>离散（discrete）</td><td>时间 8×、空间 16×16、词表 65536</td><td>49 帧</td><td>自回归 WFM（next-token prediction）</td></tr>
+</table>
+<p>压缩率直接决定训练成本：压缩 8×8×8 意味着同样 GPU 预算下可以看 8 倍长的视频。Cosmos Tokenizer 相较当时的领先 tokenizer，总压缩率提升 8 倍、速度提升 12 倍，这也是 1X 等机器人公司直接采用它的原因。</p>
+
+<h2 id="p1-5">1.5 世界基础模型 WFM</h2>
+<p>Cosmos WFM 有两条技术路线，都以 Transformer 为骨干：</p>
+<h3>自回归 WFM（Autoregressive）</h3>
+<ul>
+  <li>Transformer decoder 结构，基于文本 + 过去帧预测下一个视觉 token；</li>
+  <li><b>3D RoPE</b>：对时间与空间维度分别编码位置信息；</li>
+  <li><b>交叉注意力层</b>注入文本条件，实现对世界内容的控制；</li>
+  <li><b>QK 归一化</b>提升训练稳定性；</li>
+  <li>渐进式预训练：先从 1 帧预测 17 帧 → 再到 34 帧 → 最终到 121 帧（约 5 万 token），后期加入高质量数据微调。</li>
+</ul>
+<h3>扩散 WFM（Diffusion）</h3>
+<ul>
+  <li>在连续 tokenizer 的 latent 空间做扩散去噪，支持 text2world / video2world 等任务；</li>
+  <li>支持未来状态预测（forecasting），适合从当前观测推演"接下来世界会怎样"。</li>
+</ul>
+<div class="info"><b>为什么两种都要？</b>自回归路线天然适配"逐帧推演"的交互式世界模拟（策略评估、多步 roll-out）；扩散路线在单次生成的画质与可控性上更强（合成数据批量生产）。平台两条腿走路，让下游按需选型。</div>
+<p>评测方面，报告在 3D 一致性、物理对齐（重力、碰撞等规律遵循）、相机位姿成功率等维度上，Cosmos WFM 相较同期基线模型表现更优——这正是"世界模型"区别于"娱乐视频模型"的核心指标。</p>
+
+<h2 id="p1-6">1.6 后训练与领域定制</h2>
+<p>通用世界模型 ≠ 你的机器人所在的世界。Cosmos 的设计是：<b>预训练底座开放权重 + 官方后训练示例</b>，让开发者用自己的领域数据（机器人仓库实录、车载录像）做后训练，把"通才"变成"专才"。报告给出了两类官方示例：</p>
+<ul>
+  <li><b>自动驾驶后训练</b>：用车载多摄像头数据微调，使模型掌握特定车型视角下的驾驶世界推演；</li>
+  <li><b>机器人后训练</b>：用机器人第一视角操作视频微调，使模型生成"机械臂抓取-放置"等任务的未来帧，可用于策略评估与数据增广。</li>
+</ul>
+<p>微调技术栈为 NVIDIA NeMo Framework（支持 LoRA 等参数高效方法），配合 Curator 检索出的领域片段，能以远小于预训练的数据量与算力完成定制。</p>
+
+<h2 id="p1-7">1.7 安全护栏 Guardrails</h2>
+<p>生成式世界模型可能被诱导生成有害内容，也会把真实人脸生成出来。Cosmos 内置<b>双层护栏</b>：</p>
+<ul>
+  <li><b>Pre-guard（生成前）</b>：关键词屏蔽 + Aegis 内容安全分类模型，对提示词做拦截；</li>
+  <li><b>Post-guard（生成后）</b>：视频内容分类审核 + 人脸模糊（blur），防止输出包含可识别人脸的合成视频。</li>
+</ul>
+<p>这套"输入过滤 → 生成 → 输出审核"的三段式结构，是任何自建世界模型平台（包括本书的 deephunch）都应当继承的安全基线。</p>
+
+<h2 id="p1-8">1.8 模型家族演进（截至 2026 年）</h2>
+<p>发布一年后，Cosmos 家族已演进为三大产品线（均在 Hugging Face 开放权重，采用 NVIDIA 开放模型许可证）：</p>
+<table>
+  <tr><th>产品线</th><th>定位</th><th>2026 年最新版本要点</th></tr>
+  <tr><td><b>Cosmos Predict</b></td><td>从文本/图像/视频提示生成未来世界状态</td><td><b>Predict 2.5</b>：统一 Text2World / Image2World / Video2World，基于 2 亿片段训练，支持最长 30 秒长尾场景生成、多视角输出、自定义相机布局、动作模拟等替代策略输出；用专有数据后训练后准确度可提升 10 倍</td></tr>
+  <tr><td><b>Cosmos Transfer</b></td><td>Sim2Real：把仿真/3D 结构输入翻译成照片级真实视频</td><td><b>Transfer 2.5</b>：ControlNet 架构，输入分割图/深度图/边缘图/人体关键点/LiDAR/轨迹/HD Map/3D 包围盒等结构信号，输出空间精确对齐的逼真视频；支持 Image2Image 与 ImagePrompt；2.5-2B 轻量版物理对齐更强、长视频更稳定</td></tr>
+  <tr><td><b>Cosmos Reason</b></td><td>物理 AI 推理 VLM：看见、理解、行动</td><td><b>Reason 2</b>：2B/8B 双规格，256K 长上下文，2D/3D 点定位与包围框、轨迹理解、推理过程可解释，登顶 Physical AI Bench 榜单</td></tr>
+</table>
+<p>三者协同的典型用法：<b>Omniverse/Isaac Sim 产出结构真值 → Cosmos Transfer 渲染成真实感视频 → Cosmos Predict 做未来推演与数据增广 → Cosmos Reason 给机器人策略提供感知推理</b>。同期的 Isaac GR00T N1.6（人形机器人 VLA 基础模型）也集成了 Cosmos Reason。</p>
+
+<h2 id="p1-9">1.9 产业生态</h2>
+<p>首发采用 Cosmos 的阵营横跨机器人与自动驾驶：机器人/具身智能侧有 <b>1X、Agility、Figure AI、Agile Robots、Fourier（傅利叶）、Galbot、Hillbot、Skild AI、Neura Robotics、小鹏（XPENG）</b>；自动驾驶侧有 <b>Waabi、Wayve、Foretellix、Uber</b>。典型用法：1X 用 Cosmos Tokenizer 构建 World Model Challenge 数据集；Agility 用 text/image/video-to-world 能力生成逼真场景替代昂贵实采；Foretellix 结合 Omniverse Sensor RTX 大规模生成测试场景。</p>
+<div class="callout"><b>本部分小结：</b>Cosmos = 数据策展 + Tokenizer + 世界模型（自回归/扩散）+ 后训练框架 + 双层护栏的<b>完整平台</b>，而非单个模型。它把"世界模型"从少数大厂的专利变成开发者可下载、可微调的公共基础设施。</div>
+
+<!-- ================= 第二部分 ================= -->
+<div class="part" id="p2">第二部分 deephunch 介绍和部署</div>
+
+<h2 id="p2-1">2.1 项目定位</h2>
+<p><b>deephunch</b> 是对 Cosmos 平台的<b>架构级一比一复刻</b>：以相同的组件划分、相同的流水线形态、相同的安全基线，构建一个可私有化部署、可接入任意推理后端的物理 AI 世界模型平台。默认内置 mock 后端，无 GPU 也能跑通"数据策展 → Tokenize → 世界生成 → 后训练 → 护栏"全流程；需要真实生成能力时，把后端指向你的推理服务（如本地部署的 Cosmos-Predict2）即可，上层编排代码一行不改。</p>
+
+<h2 id="p2-2">2.2 模块映射与架构</h2>
+<table>
+  <tr><th>Cosmos 组件</th><th>deephunch 模块</th><th>实现说明</th></tr>
+  <tr><td>NeMo Curator</td><td><code>dh-curator</code></td><td>split → transcode → filter → caption → embed 五阶段任务流水线</td></tr>
+  <tr><td>Cosmos Tokenizer</td><td><code>dh-tokenizer</code></td><td>双配置：<code>dh-tok-c8x8x8</code>（连续·供扩散）与 <code>dh-tok-d8x16x16</code>（离散·供自回归），encode/decode 任务与压缩统计</td></tr>
+  <tr><td>Predict / Transfer WFM</td><td><code>dh-worldmodel</code></td><td>text2world / image2world / video2world / transfer 四类任务，可插拔后端（mock / remote HTTP）</td></tr>
+  <tr><td>NeMo 后训练</td><td><code>dh-posttrain</code></td><td>LoRA（r=32）/ SFT 预设，训练配置生成、epoch-loss 跟踪、适配器工件输出</td></tr>
+  <tr><td>Guardrails</td><td><code>dh-guardrails</code></td><td>Pre-guard 关键词拦截（可换接 Aegis 类模型）+ Post-guard 输出审核（人脸模糊占位）</td></tr>
+  <tr><td>NGC 模型目录</td><td><code>dh-registry</code></td><td>predict / transfer / reason 三家族工件注册，版本与许可管理</td></tr>
+</table>
+<p>技术栈：FastAPI + SQLite（纯标准库持久层，无编译扩展依赖）+ 线程池任务执行器 + 中文单页控制台，Docker 一键部署。</p>
+
+<h2 id="p2-3">2.3 目录结构</h2>
+<pre><code>deephunch/
+├── app/
+│   ├── main.py            # FastAPI 入口（同时挂载中文 Web 控制台）
+│   ├── config.py          # 后端/Tokenizer/护栏/后训练预设等全部平台配置
+│   ├── db.py              # SQLite 持久层（纯标准库）
+│   ├── routers/           # curator / tokenizer / worldmodel / posttrain / guardrails / registry
+│   ├── services/          # 各域业务逻辑、可插拔 WFM 后端、线程池 worker
+│   └── static/index.html  # 中文控制台（总览/策展/Tokenizer/生成/后训练/护栏/仓库）
+├── docs/                  # architecture.md（架构）与 deploy.md（部署手册）
+├── scripts/init_demo.py   # 演示数据初始化
+├── docker-compose.yml / Dockerfile / requirements.txt / LICENSE</code></pre>
+
+<h2 id="p2-4">2.4 三步部署</h2>
+<h3>方式一：裸机（最低配置即可）</h3>
+<pre><code>git clone http://data.gitgg.com/deepsams/deephunch.git
+cd deephunch
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8300</code></pre>
+<p>浏览器打开 <code>http://&lt;服务器IP&gt;:8300</code>，即进入中文控制台。七个页签对应平台七个模块，所有任务创建后由后台线程池异步执行，控制台每 5 秒自动刷新状态。</p>
+<h3>方式二：Docker</h3>
+<pre><code>docker compose up -d --build    # 数据通过 volume 持久化在 dh-data 卷</code></pre>
+<h3>初始化演示数据（可选）</h3>
+<pre><code>python scripts/init_demo.py     # 预置示例数据集与 dh-predict/transfer/reason 模型工件</code></pre>
+
+<h2 id="p2-5">2.5 接入真实推理后端</h2>
+<p>平台默认 <code>mock</code> 后端（生成占位工件，跑通全流程）。接入真实世界模型只需两步：</p>
+<ol>
+  <li>部署任意 HTTP 推理服务（如本地部署的开源 Cosmos-Predict2，或自研扩散模型服务），暴露 <code>POST /generate</code>：入参 <code>{model, mode, prompt, seed, duration_s}</code>，返回 <code>{video_url}</code>；</li>
+  <li>设置环境变量并重启：
+<pre><code>export DEEPHUNCH_WFM_BACKEND=remote
+export DEEPHUNCH_WFM_REMOTE_URL=http://10.0.0.5:9000
+export DEEPHUNCH_WFM_REMOTE_TOKEN=&lt;可选&gt;</code></pre></li>
+</ol>
+<p>生产化建议：任务队列换 Celery/Arq 并调度到 GPU 节点；产物改存 S3/OSS；Pre-guard 接内容安全模型；网关层接 GitLab OAuth 做 SSO。</p>
+
+<h2 id="p2-6">2.6 API 速查</h2>
+<table>
+  <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+  <tr><td>GET/POST</td><td><code>/api/curator/datasets</code></td><td>数据集列表 / 创建（名称、领域、许可）</td></tr>
+  <tr><td>GET/POST</td><td><code>/api/curator/jobs</code></td><td>策展任务（源地址 + 阶段串）</td></tr>
+  <tr><td>GET/POST</td><td><code>/api/tokenizer/jobs</code></td><td>Tokenize 任务（encode/decode + 片段数）</td></tr>
+  <tr><td>GET</td><td><code>/api/tokenizer/configs</code></td><td>两个 tokenizer 配置详情</td></tr>
+  <tr><td>POST</td><td><code>/api/worldmodel/jobs</code></td><td>世界生成（自动过 Pre-guard，命中关键词直接拦截）</td></tr>
+  <tr><td>POST</td><td><code>/api/worldmodel/estimate</code></td><td>生成成本估算（GPU 秒）</td></tr>
+  <tr><td>GET/POST</td><td><code>/api/posttrain/jobs</code></td><td>后训练任务（基础模型 + 预设 + 数据集）</td></tr>
+  <tr><td>POST/GET</td><td><code>/api/guardrails/pre · /events</code></td><td>Pre-guard 检测 / 护栏事件流水</td></tr>
+  <tr><td>GET/POST</td><td><code>/api/registry</code></td><td>模型工件注册与查询</td></tr>
+</table>
+
+<h2 id="p2-7">2.7 源码仓库</h2>
+<p>源码仓库地址：<code>https://data.gitgg.com/deepsams/deephunch</code>（Apache License 2.0；教学与研究用途，与 NVIDIA 无隶属关系）。克隆后执行 <code>uvicorn app.main:app --port 8300</code> 即可复现本书全部截图功能。</p>
+<div class="callout"><b>本部分小结：</b>deephunch 用约 1200 行代码复刻了 Cosmos 的平台骨架——模块划分、任务流水线、可插拔后端、双层护栏一应俱全，是把"世界模型平台"从概念变成可私有化部署资产的起点。</div>
+
+<!-- ================= 第三部分 ================= -->
+<div class="part" id="p3">第三部分 人形机器人（硬件 ODM）如何用 Cosmos 测试</div>
+
+<h2 id="p3-1">3.1 ODM 的测试困境</h2>
+<p>人形机器人硬件 ODM（代工设计制造）处在产业链的尴尬位置：客户（品牌方/AI 公司）拥有算法，ODM 拥有硬件与产线，但<b>算法测试高度依赖场景与数据</b>——而 ODM 恰恰最缺：</p>
+<ul>
+  <li><b>场景覆盖不足</b>：机器人要在上千种光照、地面、物体布局下工作，实机逐项搭建场景成本极高；</li>
+  <li><b>极端工况难复现</b>：打滑、跌倒、遮挡、反光、拥挤人流等长尾场景，实机测试危险且难量化复现；</li>
+  <li><b>客户验收缺少证据链</b>：交付时说"底盘稳定性没问题"，客户要的是"在 X 类场景下 Y 万次测试通过"的可审计记录；</li>
+  <li><b>回归测试周期长</b>：改一颗关节电机参数，理论上要把全部场景重测一遍。</li>
+</ul>
+<p>Cosmos 正好补上这一环：<b>用世界模型在数字世界里无限复现与变奏真实场景，让 ODM 在交付前就能给出"场景级"的测试证据。</b></p>
+
+<h2 id="p3-2">3.2 测试总体思路</h2>
+<p>核心公式：<b>真实采集（少量）→ 结构化仿真（Isaac Sim/Omniverse）→ Cosmos Transfer 真实感渲染 → Cosmos Predict 场景变奏 → 大规模虚拟测试 → 实机抽检闭环</b>。</p>
+<ul>
+  <li><b>少量真实数据定标</b>：在每个目标场景实采几十段视频，用 Curator 打标入库，作为"世界应该长什么样"的锚点；</li>
+  <li><b>仿真提供结构真值</b>：在 Isaac Sim 中搭数字孪生产线/家庭场景，输出分割图、深度图、关节轨迹等结构信号；</li>
+  <li><b>Cosmos Transfer 负责像不像</b>：把仿真画面渲染成照片级视频，保证视觉分布接近真实（传感器在真实分布上测试才有意义）；</li>
+  <li><b>Cosmos Predict 负责多不多</b>：以 text/image/video 条件批量生成场景变奏——换光照、换天气、换地面摩擦、换人群密度；</li>
+  <li><b>Cosmos Reason 负责判卷</b>：用推理 VLM 自动判定测试视频中"机器人是否摔倒、是否抓取成功、是否符合任务要求"，替代人工看录像。</li>
+</ul>
+
+<h2 id="p3-3">3.3 五步测试工作流</h2>
+<h3>步骤 1：场景库建设</h3>
+<p>按客户交付场景建"场景卡片"：每个场景 = 结构描述（布局/物体/任务）+ 变奏维度（光照 × 天气 × 地面 × 干扰物 × 人群密度）+ 通过判据。用 deephunch 的 Curator 管线处理实采视频、打标入库，形成可检索的场景素材库。</p>
+<h3>步骤 2：虚拟场景量产</h3>
+<p>对每个场景卡片：Isaac Sim 出结构真值 → Transfer 渲染基础视频 → Predict 按变奏矩阵批量生成。一个场景卡片轻松裂变成数千段测试视频，全部带元数据（场景 ID、变奏参数、种子），可精确复现。</p>
+<h3>步骤 3：策略/控制器在环测试</h3>
+<ul>
+  <li><b>SIL（软件在环）</b>：把生成的视频流喂给客户的感知模型，测检测/分割/位姿精度在变奏下的衰减曲线；</li>
+  <li><b>HIL（硬件在环）</b>：真实控制器/真机接入，虚拟世界作为"眼睛"——世界模型生成的未来帧作为传感器输入，验证控制回路响应；</li>
+  <li><b>World-model-in-the-loop</b>：用后训练后的世界模型做策略评估（Cosmos 官方用途之一）：预测"如果执行这个动作，世界会怎样"，与真实 rollout 对比打分。</li>
+</ul>
+<h3>步骤 4：极端工况压力测试</h3>
+<p>在数字世界里免费做现实中不敢做的测试：湿滑地面行走、货架倒塌、人流冲撞、断电重启、关节过热降级……每种工况生成数百段视频，统计故障率。这些长尾场景恰恰是客户最关心、实机最难测的部分。</p>
+<h3>步骤 5：回归与验收证据链</h3>
+<p>硬件改版（换电机/换传感器/改结构）后，用<b>同一批种子</b>重新跑全部场景，自动对比新旧版本指标（成功率、摔倒率、任务完成时间）。Cosmos Reason 自动生成判定与解释，输出带审计字段（场景、参数、种子、判据、结论）的测试报告，作为 ODM 交付验收材料。</p>
+
+<h2 id="p3-4">3.4 回归测试与验收</h2>
+<table>
+  <tr><th>测试类型</th><th>传统实机做法</th><th>Cosmos/deephunch 做法</th><th>收益</th></tr>
+  <tr><td>场景覆盖</td><td>搭建 N 个实景</td><td>场景卡片 × 变奏矩阵，量产数千段</td><td>覆盖率提升一个数量级</td></tr>
+  <tr><td>长尾工况</td><td>危险/难复现，多数放弃</td><td>Predict 批量生成，参数可复现</td><td>从"不测"到"全测"</td></tr>
+  <tr><td>回归测试</td><td>改版后人工重测数周</td><td>同种子全自动重跑，小时级</td><td>改版→复测周期从周级到天级</td></tr>
+  <tr><td>验收证据</td><td>现场演示 + 口头承诺</td><td>带种子/判据的可审计报告</td><td>交付争议大幅减少</td></tr>
+</table>
+
+<h2 id="p3-5">3.5 落地清单</h2>
+<ol>
+  <li>部署 deephunch（第二部分手册），数据集按"客户 × 场景卡片"组织；</li>
+  <li>每个目标场景实采 30–100 段视频定标，走 Curator 管线入库；</li>
+  <li>Isaac Sim 搭 3–5 个核心场景数字孪生，导出结构真值（分割/深度/轨迹）；</li>
+  <li>接入 Transfer/Predict 推理后端（云端或本地 GPU 节点），开始场景量产；</li>
+  <li>用 Reason 建自动判卷规则库（摔倒判定、抓取成功、路径偏离等）；</li>
+  <li>把"虚拟测试报告"纳入 ODM 交付文档模板，形成差异化卖点。</li>
+</ol>
+<div class="callout"><b>本部分小结：</b>对硬件 ODM 而言，Cosmos 的价值不是"又一个视频模型"，而是把测试从"搭实景"变成"写场景卡片 + 跑矩阵"——测试覆盖率、可复现性、交付证据链三个维度同时升级，这正是 ODM 从"代工制造"走向"代工验证"的入口。</div>
+
+<!-- ================= 第四部分 ================= -->
+<div class="part" id="p4">第四部分 用 Cosmos 生成数据并卖出去</div>
+
+<h2 id="p4-1">4.1 为什么数据能卖钱</h2>
+<p>物理 AI 公司最大的成本项之一是数据：Agility CTO 直言"数据的稀缺性和可变性是机器人环境学习的主要挑战"。一段高质量的机器人操作示教数据（遥操作采集）成本可达数十到数百元/条，且无法覆盖长尾。而 Cosmos 类世界模型可以<b>以近乎零边际成本复制高质量场景并做系统性变奏</b>。卖数据本质上是卖三样东西：</p>
+<ol>
+  <li><b>稀缺性</b>：客户拿不到的场景（危险工况、产线内部、特殊地域）；</li>
+  <li><b>结构</b>：不只是视频，还有对齐的标注——分割、深度、动作标签、语言指令；</li>
+  <li><b>合规放心</b>：合成数据没有真人隐私、没有实拍版权问题（这正是 Post-guard 人脸模糊存在的意义）。</li>
+</ol>
+
+<h2 id="p4-2">4.2 数据生产流水线</h2>
+<p>一条可复制的量产线（全部环节都对应 deephunch/Cosmos 的现成能力）：</p>
+<ol>
+  <li><b>种子采集</b>：实采或仿真获得少量高保真种子场景（Isaac Sim 真值 + Transfer 渲染）；</li>
+  <li><b>变奏矩阵</b>：Predict 按光照/天气/物体/视角矩阵批量生成，每个样本带完整元数据与随机种子；</li>
+  <li><b>自动标注</b>：结构真值天然自带完美标注（无需人工标注），Reason 可补语义标签与指令文本；</li>
+  <li><b>质量过滤</b>：用 Cosmos 管线同款指标（物理一致性、清晰度、运动量）自动筛掉劣质样本；</li>
+  <li><b>包装交付</b>：按客户格式（LeRobot、OpenX 兼容、自定义 HDF5）打包，附数据卡（Data Card）说明分布与限制。</li>
+</ol>
+
+<h2 id="p4-3">4.3 数据产品形态</h2>
+<table>
+  <tr><th>产品</th><th>内容</th><th>典型买家</th></tr>
+  <tr><td><b>场景数据集（Dataset）</b></td><td>特定领域带标注视频集（如"仓库人形操作 10 万条"，含分割/深度/动作标签）</td><td>机器人算法公司、具身智能初创、高校实验室</td></tr>
+  <tr><td><b>生成 API（Data-as-a-Service）</b></td><td>客户提交场景描述/结构输入，按条付费生成定制数据</td><td>需要私有场景、不愿公开数据的客户</td></tr>
+  <tr><td><b>后训练服务</b></td><td>用客户私有数据把 Cosmos 后训练成其领域专用世界模型（模型不卖，按项目收费）</td><td>车厂、机器人品牌方</td></tr>
+  <tr><td><b>测试场景包</b></td><td>第三部分的"场景卡片 × 变奏矩阵"打包为行业测试基准（如"人形机器人安防巡逻基准"）</td><td>ODM 同行、认证机构、行业联盟</td></tr>
+  <tr><td><b>仿真中间件</b></td><td>deephunch 平台私有化部署 + 场景库，卖 license + 年度维护</td><td>大客户自建数据工厂</td></tr>
+</table>
+
+<h2 id="p4-4">4.4 客户画像与定价</h2>
+<ul>
+  <li><b>机器人算法公司/初创</b>：缺数据、缺钱、要快 → 卖标准数据集订阅 + API 充值；</li>
+  <li><b>自动驾驶公司</b>：要长尾场景（事故、恶劣天气）→ 卖定制生成，按场景复杂度计价；</li>
+  <li><b>机器人品牌方/车厂</b>：数据敏感不愿外流 → 卖私有化部署 + 后训练服务，项目制；</li>
+  <li><b>高校/研究所</b>：预算小、要引用规范 → 卖学术许可折扣版数据集。</li>
+</ul>
+<p>定价锚点（示例，需按实测成本校准）：</p>
+<table>
+  <tr><th>模式</th><th>参考价</th><th>说明</th></tr>
+  <tr><td>视频样本（带标注）</td><td>¥3–15 / 条</td><td>对比遥操作实采 ¥30–200/条，有 10 倍以上成本优势</td></tr>
+  <tr><td>标准数据集授权</td><td>¥10 万–80 万 / 领域 / 年</td><td>按领域与规模分档，含更新</td></tr>
+  <tr><td>生成 API</td><td>¥0.5–2 / 秒生成视频</td><td>按 GPU 秒成本（约 ¥0.1–0.4）加 3–5 倍毛利</td></tr>
+  <tr><td>私有化部署 + 后训练</td><td>¥80 万–300 万 / 项目</td><td>含平台 license、场景库与定制微调</td></tr>
+</table>
+
+<h2 id="p4-5">4.5 渠道与销售打法</h2>
+<ol>
+  <li><b>开源引流</b>：deephunch 平台开源 + 发布几个免费小型示范数据集（Hugging Face/GitLab），建立技术信誉，把流量导给付费大集；</li>
+  <li><b>基准卡位</b>：联合行业伙伴发布"XX 场景测试基准"（第三部分的场景包产品化），成为事实标准后向参赛者卖数据；</li>
+  <li><b>ODM 联动</b>：自家 ODM 交付时捆绑"虚拟测试报告 + 场景数据"，把测试能力变成对算法客户的数据销售入口；</li>
+  <li><b>生态合作</b>：与仿真工具链（Isaac 生态）、标注公司、云厂商做渠道分成；</li>
+  <li><b>私有化大单</b>：对数据敏感的头部客户走"平台 + 数据工厂共建"模式，客单价最高。</li>
+</ol>
+
+<h2 id="p4-6">4.6 合规与风险</h2>
+<ul>
+  <li><b>许可链</b>：Cosmos 采用 NVIDIA 开放模型许可证——用其生成的数据商用前需核对许可证条款（含 10 亿月活以下限制等），自研底座可彻底规避；deephunch 的 registry 模块应记录每个数据集的模型来源与许可；</li>
+  <li><b>种子采集版权</b>：实采视频需获得拍摄地/人物授权，或全部用仿真种子；</li>
+  <li><b>隐私合规</b>：坚持 Post-guard 人脸模糊；合成数据的优势就是"无真人"，不要破坏它；</li>
+  <li><b>质量责任</b>：数据卡中明确声明分布偏差（如"雨天样本基于仿真光照模型"），避免客户误用于安全关键决策；</li>
+  <li><b>竞争壁垒</b>：视频本身可被再生成，真正护城河是<b>种子场景库 + 元数据体系 + 客户私有数据后训练的锁定效应</b>——卖"持续更新的数据关系"，而非一次性文件。</li>
+</ul>
+
+<h2 id="p4-7">4.7 90 天商业化路线</h2>
+<table>
+  <tr><th>阶段</th><th>目标</th><th>关键动作</th></tr>
+  <tr><td>第 1–30 天</td><td>打样</td><td>部署 deephunch + 接入 Predict/Transfer；选定 1 个领域（建议仓库/泊车）；产出 1 个 1 万条规模的示范数据集</td></tr>
+  <tr><td>第 31–60 天</td><td>验证</td><td>找 3–5 家种子客户免费试用换证言；上线 API 计费；发布示范集开源引流</td></tr>
+  <tr><td>第 61–90 天</td><td>放大</td><td>签首个私有化/后训练项目；把 ODM 虚拟测试报告产品化；建立月度数据集更新节奏</td></tr>
+</table>
+<div class="callout"><b>全书总结：</b>Cosmos 证明了"世界模型平台化"的可行性；deephunch 把这套架构变成可私有部署的开源资产；对硬件 ODM，它是测试能力的代际升级；对数据生意，它是把"采集数据"变成"生产数据"的工厂。四件事连起来，就是一条从技术到营收的完整路径。</div>
+
+<div class="footer">
+  《Cosmos 世界基础模型与 deephunch 平台》· 2026 年 11 月<br>
+  参考：arXiv:2501.03575 · NVIDIA Cosmos 官方博客与开发者文档 · deephunch 源码仓库
+</div>
+</main>
+</div>
+</body>
+</html>
